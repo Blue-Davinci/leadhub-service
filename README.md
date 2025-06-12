@@ -131,7 +131,7 @@ CI/CD pipeline via GitHub Actions automates linting, testing, building, vulnerab
 
 ## ✍️ Authors <a name = "authors"></a>
 
-- [@blue-davinci](https://github.com/kylelobo) - Idea & Initial work
+- [@blue-davinci](https://github.com/Blue-Davinci) - Idea & Initial work
 
 See also the list of [contributors](https://github.com/kylelobo/The-Documentation-Compendium/contributors) who participated in this project.
 
