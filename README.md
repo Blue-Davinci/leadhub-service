@@ -45,14 +45,12 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Prerequisites
 
+```bash
 - Go 1.20+
 - Docker & Docker Compose
 - PostgreSQL 14+
 - Redis
 - GNU Make (optional, for scripted workflows)
-
-```
-Give examples
 ```
 
 ### Installing
@@ -133,7 +131,7 @@ CI/CD pipeline via GitHub Actions automates linting, testing, building, vulnerab
 
 ## ✍️ Authors <a name = "authors"></a>
 
-- [@kylelobo](https://github.com/kylelobo) - Idea & Initial work
+- [@blue-davinci](https://github.com/kylelobo) - Idea & Initial work
 
 See also the list of [contributors](https://github.com/kylelobo/The-Documentation-Compendium/contributors) who participated in this project.
 
