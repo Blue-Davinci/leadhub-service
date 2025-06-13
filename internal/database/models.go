@@ -16,6 +16,11 @@ type ApiKey struct {
 	Scope  string
 }
 
+type Permission struct {
+	ID   int64
+	Code string
+}
+
 type Tenant struct {
 	ID           int64
 	Name         string
@@ -36,4 +41,9 @@ type User struct {
 	Version      int32
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
+}
+
+type UsersPermission struct {
+	UserID       int64
+	PermissionID int64
 }
