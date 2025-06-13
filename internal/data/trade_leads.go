@@ -113,8 +113,8 @@ func (m TradeLeadModel) GetAllLeadsByTenantID(tenantID int64, name string, filte
 	leads, err := m.DB.GetAllLeadsByTenantID(ctx, database.GetAllLeadsByTenantIDParams{
 		TenantID: tenantID,
 		Column2:  name,
-		Limit:    int32(filters.limit()),
-		Offset:   int32(filters.offset()),
+		Limit:    filters.limitInt32(),
+		Offset:   filters.offsetInt32(),
 	})
 	if err != nil {
 		switch {
@@ -148,8 +148,8 @@ func (m TradeLeadModel) AdminGetAllTradeLeads(name string, filters Filters) ([]*
 	// get all trade leads
 	leads, err := m.DB.AdminGetAllTradeLeads(ctx, database.AdminGetAllTradeLeadsParams{
 		Column1: name,
-		Limit:   int32(filters.limit()),
-		Offset:  int32(filters.offset()),
+		Limit:   filters.limitInt32(),
+		Offset:  filters.offsetInt32(),
 	})
 	if err != nil {
 		switch {
