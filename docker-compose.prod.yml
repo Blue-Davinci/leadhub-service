@@ -1,0 +1,220 @@
+# =============================================================================
+# LeadHub Service - Production Docker Compose
+
+version: '3.8'
+
+services:
+  # =============================================================================
+  # NGINX Reverse Proxy (THE PRODUCTION GATEWAY)
+  # =============================================================================
+  nginx:
+    image: nginx:1.26-alpine
+    container_name: leadhub-nginx-prod
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - api-1
+      - api-2
+    networks:
+      - leadhub-frontend
+      - leadhub-backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # =============================================================================
+  # LeadHub API Instances (High Availability Setup)
+  # =============================================================================
+  api-1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: leadhub-api-1
+    environment: &api-environment
+      # Database Configuration
+      LEADHUB_DB_DSN: "postgres://leadhub:${POSTGRES_PASSWORD}@postgres:5432/leadhub?sslmode=require"
+      
+      # Application Configuration
+      PORT: 4000
+      ENV: production
+      
+      # SMTP Configuration
+      LEADHUB_SMTP_HOST: ${SMTP_HOST}
+      LEADHUB_SMTP_USERNAME: ${SMTP_USERNAME}
+      LEADHUB_SMTP_PASSWORD: ${SMTP_PASSWORD}
+      LEADHUB_SMTP_SENDER: "LeadHub <no-reply@leadhub.tech>"
+      
+      # Rate Limiting (Production settings)
+      RATE_LIMIT_RPS: 5
+      RATE_LIMIT_BURST: 10
+      
+      # Database Pool Settings
+      DB_MAX_OPEN_CONNS: 50
+      DB_MAX_IDLE_CONNS: 25
+      DB_MAX_IDLE_TIME: 15m
+      
+      # Security Settings
+      CORS_TRUSTED_ORIGINS: ${CORS_ORIGINS:-https://leadhub.tech,https://app.leadhub.tech}
+    expose:
+      - "4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - leadhub-backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/leadhub-api", "healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Second API instance for high availability
+  api-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: leadhub-api-2
+    environment: *api-environment
+    expose:
+      - "4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - leadhub-backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/leadhub-api", "healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # =============================================================================
+  # PostgreSQL Database (Production Configuration)
+  # =============================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: leadhub-postgres-prod
+    environment:
+      POSTGRES_DB: leadhub
+      POSTGRES_USER: leadhub
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      # Production security settings
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgresql/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - postgres_logs:/var/log/postgresql
+    networks:
+      - leadhub-backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U leadhub -d leadhub"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # Security: Don't expose database port externally in prodiction
+
+  # =============================================================================
+  # Redis Cache & Session Store
+  # =============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: leadhub-redis-prod
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+      - ./redis/redis.conf:/etc/redis/redis.conf:ro
+    networks:
+      - leadhub-backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # =============================================================================
+  # MOnitoring & Observability
+  # =============================================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: leadhub-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - leadhub-backend
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: leadhub-grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    networks:
+      - leadhub-backend
+    restart: unless-stopped
+
+# =============================================================================
+# Netwosrks (Segregated for Security)
+# =============================================================================
+networks:
+  # Frontend network: NGINX and external access
+  leadhub-frontend:
+    driver: bridge
+    name: leadhub-frontend
+  
+  # Backend network: Internal services only
+  leadhub-backend:
+    driver: bridge
+    name: leadhub-backend
+
+# =============================================================================
+# Persistent Volumes
+# =============================================================================
+volumes:
+  postgres_data:
+    name: leadhub-postgres-prod
+  redis_data:
+    name: leadhub-redis-prod
+  prometheus_data:
+    name: leadhub-prometheus
+  grafana_data:
+    name: leadhub-grafana
+  nginx_logs:
+    name: leadhub-nginx-logs
+  postgres_logs:
+    name: leadhub-postgres-logs

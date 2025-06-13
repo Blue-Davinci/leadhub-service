@@ -1,0 +1,121 @@
+# ===============================================
+# LeadHub Service - Docker Compose Development
+# ===============================================
+# Complete development environment with all dependencies
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: leadhub-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: leadhub
+      POSTGRES_USER: leadhub
+      POSTGRES_PASSWORD: leadhub_dev_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./internal/sql/schema:/docker-entrypoint-initdb.d
+    networks:
+      - leadhub-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U leadhub -d leadhub"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # LeadHub API Service
+  leadhub-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder  # Use builder stage for development
+    container_name: leadhub-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Database Configuration
+      LEADHUB_DB_DSN: "postgres://leadhub:leadhub_dev_password@postgres:5432/leadhub?sslmode=disable"
+      
+      # Server Configuration
+      PORT: 4000
+      ENV: development
+      
+      # Rate Limiting
+      RATE_LIMIT_RPS: 10
+      RATE_LIMIT_BURST: 20
+      
+      # SMTP Configuration (using Mailtrap for development)
+      LEADHUB_SMTP_HOST: sandbox.smtp.mailtrap.io
+      LEADHUB_SMTP_USERNAME: your_smtp_username
+      LEADHUB_SMTP_PASSWORD: your_smtp_password
+      LEADHUB_SMTP_SENDER: "LEADHUB <no-reply@leadhub.tech>"
+      
+      # Database Connection Pool
+      DB_MAX_OPEN_CONNS: 25
+      DB_MAX_IDLE_CONNS: 25
+      DB_MAX_IDLE_TIME: 15m
+    ports:
+      - "4000:4000"
+    volumes:
+      # Mount source code for development (hot reload)
+      - .:/app
+      - /app/bin  # Exclude binary directory
+    networks:
+      - leadhub-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Redis for caching (optional - for future enhancements)
+  redis:
+    image: redis:7-alpine
+    container_name: leadhub-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - leadhub-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Adminer for database management
+  adminer:
+    image: adminer:4-standalone
+    container_name: leadhub-adminer
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"
+    networks:
+      - leadhub-network
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DESIGN: pepa-linha
+
+# Named volumes for data persistence
+volumes:
+  postgres_data:
+    driver: local
+
+# Custom network for service communication
+networks:
+  leadhub-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
