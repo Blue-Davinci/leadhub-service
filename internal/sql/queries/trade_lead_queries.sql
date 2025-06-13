@@ -63,7 +63,7 @@ RETURNING id,tenant_id, version, created_at, updated_at;
 UPDATE trade_leads
 SET 
   status = 'verified'
-WHERE id = $1 AND version = $2 AND status = 'new'
+WHERE id = $1 AND version = $2
 RETURNING version, status, updated_at;
 
 

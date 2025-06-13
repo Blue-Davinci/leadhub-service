@@ -180,7 +180,7 @@ func (app *application) updateTenantHandler(w http.ResponseWriter, r *http.Reque
 	}
 	// Update the tenant in the database.
 	// Validate versionID can be safely converted to int32
-	if versionID > int64(^uint32(0)>>1) || versionID < int64(^(^uint32(0)>>1)) {
+	if versionID > 2147483647 || versionID < -2147483648 {
 		app.badRequestResponse(w, r, errors.New("version ID out of range"))
 		return
 	}
