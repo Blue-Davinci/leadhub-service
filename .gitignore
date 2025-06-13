@@ -9,3 +9,4 @@ coverage.html
 
 # Security scan results
 gosec-results.sarif
+.env.*
