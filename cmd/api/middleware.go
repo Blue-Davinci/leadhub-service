@@ -173,6 +173,9 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+// The metrics() middleware will be used to collect and expose various metrics about the
+// API server, such as the total number of requests received, the total number of
 func (app *application) metrics(next http.Handler) http.Handler {
 	// Initialize the new expvar variables when the middleware chain is first built.
 	totalRequestsReceived := expvar.NewInt("total_requests_received")
@@ -194,4 +197,30 @@ func (app *application) metrics(next http.Handler) http.Handler {
 		// Increment the count for the response status code.
 		totalResponsesSentByStatus.Add(strconv.Itoa(metrics.Code), 1)
 	})
+}
+
+// The requirePermission() middleware will be used to check that the authenticated user
+// has the required permission to access a specific route.
+func (app *application) requirePermission(code string) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Retrieve the user from the request context.
+			user := app.contextGetUser(r)
+			// Get the slice of permissions for the user.
+			permissions, err := app.models.Permissions.GetAllPermissionsForUser(user.ID)
+			if err != nil {
+				app.serverErrorResponse(w, r, err)
+				return
+			}
+			// Check if the slice includes the required permission. If it doesn't, then
+			// return a 403 Forbidden response.
+			if !permissions.Include(code) {
+				app.notPermittedResponse(w, r)
+				return
+			}
+			// Otherwise they have the required permission so we call the next handler in
+			// the chain.
+			next.ServeHTTP(w, r)
+		})
+	}
 }
