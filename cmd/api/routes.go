@@ -21,6 +21,10 @@ func (app *application) routes() http.Handler {
 	}))
 	//Use alice to make a global middleware chain.
 	globalMiddleware := alice.New(app.metrics, app.recoverPanic, app.rateLimit, app.authenticate).Then
+	// Dynamic Middleware, these will apply to only select routes
+	dynamicMiddleware := alice.New(app.requireAuthenticatedUser, app.requireActivatedUser)
+	// Permission Middleware, this will apply to specific routes that are capped by the permissions
+	adminPermissionMiddleware := alice.New(app.requirePermission("admin:write"))
 
 	// Apply the global middleware to the router
 	router.Use(globalMiddleware)
@@ -30,6 +34,7 @@ func (app *application) routes() http.Handler {
 
 	v1Router.Mount("/", app.generalRoutes())
 	v1Router.Mount("/api", app.userRoutes())
+	v1Router.With(dynamicMiddleware.Then).Mount("/tenants", app.tenantRoutes(&adminPermissionMiddleware))
 
 	// Moount the v1Router to the main base router
 	router.Mount("/v1", v1Router)
@@ -57,4 +62,18 @@ func (app *application) userRoutes() chi.Router {
 	// /activation : for activating accounts
 	userRoutes.Put("/activated", app.activateUserHandler)
 	return userRoutes
+}
+
+// tenantRoutes() is a method that returns a chi.Router that contains all the routes for the tenants
+// This is a placeholder for tenant-related routes, which can be expanded as needed.
+func (app *application) tenantRoutes(adminPermissionMiddleware *alice.Chain) chi.Router {
+	tenantRoutes := chi.NewRouter()
+	// /tenants/{id} : for getting a tenant by ID
+	tenantRoutes.Get("/", app.getTenantByIDHandler)
+
+	// admin routes
+	tenantRoutes.With(adminPermissionMiddleware.Then).Post("/admin", app.createTenantHandler)
+	tenantRoutes.With(adminPermissionMiddleware.Then).Get("/admin", app.adminGetAllTenantsHandler)
+	tenantRoutes.With(adminPermissionMiddleware.Then).Patch("/admin/{tenantID:[0-9]+}/{versionID:[0-9]+}", app.updateTenantHandler)
+	return tenantRoutes
 }
