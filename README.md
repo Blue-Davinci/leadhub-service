@@ -24,13 +24,13 @@
 
 - [About](#about)
 - [Getting Started](#getting_started)
-- [Deployment](#deployment)
+- [DevOps & Deployment](#deployment)
 - [Usage](#usage)
+- [API Documentation](#api_docs)
+- [Testing](#testing)
 - [Built Using](#built_using)
-- [TODO](../TODO.md)
-- [Contributing](../CONTRIBUTING.md)
 - [Authors](#authors)
-- [Acknowledgments](#acknowledgement)
+- [Documentation](#documentation)
 
 ## 🧐 About <a name = "about"></a>
 
@@ -98,44 +98,115 @@ echo "we coming"
 
 Once running locally:
 ```bash
-API base URL: http://localhost:8080/api/v1
+API base URL: http://localhost:4000/v1
 
-Health check: GET /api/v1/health
+Health check: GET /v1/health
 
-Tenant leads: GET /api/v1/leads/ (Bearer token required)
+Trade leads: GET /v1/trade_leads/ (Bearer token required)
 ```
 
-## 🚀 Deployment <a name = "deployment"></a>
+## 🚀 DevOps & Deployment <a name = "deployment"></a>
 
-Preliminary instructions (Still in development)
+### Quick Start
 ```bash
-./deploy.sh leadhub-service:latest
+# Development environment
+make docker/dev
+
+# Production deployment  
+make deploy/production
 ```
-This script will handle:
 
-- Docker image pulling
-- Service restart
-- Health check validation
-- Loading configuration from .env
+### CI/CD Pipeline
+- **Automated Testing**: Unit, integration, and security tests
+- **Container Security**: Vulnerability scanning with Trivy
+- **Multi-environment**: Staging (development branch) and Production (releases)
+- **Health Monitoring**: Automated health checks and rollback
 
-CI/CD pipeline via GitHub Actions automates linting, testing, building, vulnerability scanning, and deployment.
+### Documentation
+- **[Complete Deployment Guide](./docs/DEPLOYMENT.md)** - Comprehensive deployment procedures
+- **[DevOps Guide](./docs/DEVOPS.md)** - Infrastructure and operational procedures  
+- **[Implementation Summary](./docs/IMPLEMENTATION_SUMMARY.md)** - Technical implementation details
+
+## 🧪 Testing <a name = "testing"></a>
+
+```bash
+# Run all tests
+make test/all
+
+# Test coverage report
+./test.sh
+```
+
+**Test Coverage:**
+- Multi-tenant security validation
+- Authentication and authorization
+- Rate limiting and panic recovery
+- Business logic validation
+- Financial precision testing
+
+## 📚 API Documentation <a name = "api_docs"></a>
+
+### Authentication
+```bash
+# Create user
+POST /v1/api/
+{
+  "name": "John Doe",
+  "email": "john@company.com", 
+  "password": "securepassword"
+}
+
+# Get API token
+POST /v1/api/authentication
+{
+  "email": "john@company.com",
+  "password": "securepassword"
+}
+```
+
+### Trade Leads Management
+```bash
+# Create trade lead (authenticated)
+POST /v1/trade_leads/
+Authorization: Bearer <token>
+{
+  "title": "Software Development Project",
+  "description": "Mobile app development",
+  "value": 50000.00
+}
+
+# Get tenant's trade leads
+GET /v1/trade_leads/
+Authorization: Bearer <token>
+```
 
 ## ⛏️ Built Using <a name = "built_using"></a>
 
-- [Go]() – Backend language
-- [PostgreSQL]() – Relational database
-- [Redis]() – Caching for stats
-- [Docker]() – Containerization
-- [GitHub Actions]() – CI/CD
-- [Goose]() – Database migrations
+- **[Go 1.23](https://golang.org)** – Backend language with robust concurrency
+- **[PostgreSQL 16](https://postgresql.org)** – Relational database with JSON support
+- **[NGINX](https://nginx.org)** – Reverse proxy and load balancer
+- **[Docker](https://docker.com)** – Containerization platform
+- **[GitHub Actions](https://github.com/features/actions)** – CI/CD automation
+- **[Goose](https://github.com/pressly/goose)** – Database migration tool
 
 ## ✍️ Authors <a name = "authors"></a>
 
-- [@blue-davinci](https://github.com/Blue-Davinci) - Idea & Initial work
+- [@blue-davinci](https://github.com/Blue-Davinci) - Lead Developer & DevOps Engineer
 
-See also the list of [contributors](https://github.com/kylelobo/The-Documentation-Compendium/contributors) who participated in this project.
+## 📖 Documentation <a name = "documentation"></a>
 
-## 🎉 Acknowledgements <a name = "acknowledgement"></a>
+### Core Documentation
+- **[Deployment Guide](./docs/DEPLOYMENT.md)** - Complete deployment procedures
+- **[DevOps Guide](./docs/DEVOPS.md)** - Infrastructure management
+- **[Implementation Summary](./docs/IMPLEMENTATION_SUMMARY.md)** - Technical overview
 
-- Real Sources Africa for the assignment context
-- Go, Redis, PostgreSQL, and Docker maintainers
+### Development
+- **[Test Guide](./test.sh)** - Automated testing procedures
+- **[Migration Scripts](./scripts/)** - Database and deployment automation
+- **[Environment Configs](./configs/)** - Environment-specific configurations
+
+### Security & Compliance
+- Multi-tenant data isolation at application level
+- Bearer token based authentication with API key support
+- Rate limiting and input validation
+- Container security with vulnerability scanning

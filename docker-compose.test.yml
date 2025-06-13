@@ -1,7 +1,7 @@
 # ===============================================
-# LeadHub Service - Docker Compose Development
+# LeadHub Service - Complete Testing Environment
 # ===============================================
-# Complete development environment with all dependencies
+# This setup demonstrates the full production stack
 
 version: '3.8'
 
@@ -9,20 +9,18 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
-    container_name: leadhub-postgres
+    container_name: leadhub-test-db
     restart: unless-stopped
     environment:
       POSTGRES_DB: leadhub
       POSTGRES_USER: leadhub
       POSTGRES_PASSWORD: leadhub_dev_password
-      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./internal/sql/schema:/docker-entrypoint-initdb.d
+      - postgres_test_data:/var/lib/postgresql/data
     networks:
-      - leadhub-network
+      - leadhub-test-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U leadhub -d leadhub"]
       interval: 10s
@@ -30,12 +28,9 @@ services:
       retries: 5
 
   # LeadHub API Service
-  leadhub-api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      # Remove target to use final production stage
-    container_name: leadhub-api
+  api:
+    image: leadhub-service:latest
+    container_name: leadhub-test-api
     restart: unless-stopped
     depends_on:
       postgres:
@@ -48,28 +43,22 @@ services:
       PORT: 4000
       ENV: development
       
-      # Rate Limiting
+      # Rate Limiting (relaxed for testing)
       RATE_LIMIT_RPS: 10
       RATE_LIMIT_BURST: 20
       
-      # SMTP Configuration (using Mailtrap for development)
+      # SMTP Configuration (dummy for testing)
       LEADHUB_SMTP_HOST: sandbox.smtp.mailtrap.io
-      LEADHUB_SMTP_USERNAME: your_smtp_username
-      LEADHUB_SMTP_PASSWORD: your_smtp_password
+      LEADHUB_SMTP_USERNAME: test
+      LEADHUB_SMTP_PASSWORD: test
       LEADHUB_SMTP_SENDER: "LEADHUB <no-reply@leadhub.tech>"
       
       # Database Connection Pool
       DB_MAX_OPEN_CONNS: 25
       DB_MAX_IDLE_CONNS: 25
       DB_MAX_IDLE_TIME: 15m
-    ports:
-      - "4000:4000"
-    volumes:
-      # Mount source code for development (hot reload)
-      - .:/app
-      - /app/bin  # Exclude binary directory
     networks:
-      - leadhub-network
+      - leadhub-test-network
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/v1/health"]
       interval: 30s
@@ -77,50 +66,19 @@ services:
       retries: 3
       start_period: 40s
 
-  # Redis for caching (optional - for future enhancements)
-  redis:
-    image: redis:7-alpine
-    container_name: leadhub-redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    networks:
-      - leadhub-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 3
-
-  # Adminer for database management
-  adminer:
-    image: adminer:4-standalone
-    container_name: leadhub-adminer
-    restart: unless-stopped
-    depends_on:
-      - postgres
-    ports:
-      - "8080:8080"
-    networks:
-      - leadhub-network
-    environment:
-      ADMINER_DEFAULT_SERVER: postgres
-      ADMINER_DESIGN: pepa-linha
-
   # NGINX Reverse Proxy
   nginx:
     image: nginx:alpine
-    container_name: leadhub-nginx
+    container_name: leadhub-test-nginx
     restart: unless-stopped
     depends_on:
-      - leadhub-api
+      - api
     ports:
-      - "80:80"
-      - "443:443"
+      - "8080:80"
     volumes:
       - ./nginx/nginx-simple.conf:/etc/nginx/nginx.conf:ro
     networks:
-      - leadhub-network
+      - leadhub-test-network
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
       interval: 30s
@@ -129,13 +87,10 @@ services:
 
 # Named volumes for data persistence
 volumes:
-  postgres_data:
+  postgres_test_data:
     driver: local
 
 # Custom network for service communication
 networks:
-  leadhub-network:
+  leadhub-test-network:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
