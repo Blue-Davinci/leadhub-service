@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/Blue-Davinci/leadhub-service/internal/data"
@@ -181,6 +182,11 @@ func (app *application) adminUpdateTradeLeadStatusHandler(w http.ResponseWriter,
 		return
 	}
 	// let us update the lead status
+	// Validate versionID can be safely converted to int32
+	if versionID > int64(^uint32(0)>>1) || versionID < int64(^(^uint32(0)>>1)) {
+		app.badRequestResponse(w, r, errors.New("version ID out of range"))
+		return
+	}
 	err = app.models.TradeLeads.AdminUpdateTradeLeadStatus(leadID, int32(versionID), lead)
 	if err != nil {
 		switch {
