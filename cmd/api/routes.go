@@ -51,7 +51,7 @@ func (app *application) generalRoutes() chi.Router {
 	generalRoutes.Get("/debug/vars", func(w http.ResponseWriter, r *http.Request) {
 		expvar.Handler().ServeHTTP(w, r)
 	})
-	// generalRoutes.Get("/health", app.healthcheckHandler)
+	generalRoutes.Get("/health", app.healthcheckHandler)
 	return generalRoutes
 }
 
