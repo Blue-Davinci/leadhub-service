@@ -20,6 +20,10 @@ export DB_HOST=localhost
 export DB_PORT=5432
 export DB_NAME=leadhub
 
+# Run database migrations
+echo "🗄️ Running database migrations..."
+make migrate/up
+
 echo "Environment ready! Starting local API..."
 echo "API will be available at: http://localhost:4000"
 echo "PostgreSQL running in container on: localhost:5432"
