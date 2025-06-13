@@ -6,6 +6,8 @@ help:
 	@echo "  run/api             - run the API application"
 	@echo "  test/all            - run complete test suite"
 	@echo "  audit               - format, vet, test, staticcheck"
+	@echo "  format              - format all Go code"
+	@echo "  format/check        - check if code is properly formatted"
 	@echo ""
 	@echo "Database:"
 	@echo "  migrate/up          - run database migrations up"
@@ -39,6 +41,25 @@ audit:
 	go vet ./...
 	@echo 'Running tests...'
 	go test -race -vet=off ./...
+
+## format: format all Go code
+.PHONY: format
+format:
+	@echo 'Formatting all Go code...'
+	go fmt ./...
+	@echo 'Code formatting complete!'
+
+## format/check: check if code is properly formatted
+.PHONY: format/check
+format/check:
+	@echo 'Checking code formatting...'
+	@if [ "$$(gofmt -l . | wc -l)" -gt 0 ]; then \
+		echo "Code iis not properly formatted. Run 'make format' to fix:"; \
+		gofmt -l .; \
+		exit 1; \
+	else \
+		echo "All code is properly formated!"; \
+	fi
 
 ## vendor: tidy and vendor dependencies
 .PHONY: vendor
