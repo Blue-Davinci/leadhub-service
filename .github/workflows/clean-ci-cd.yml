@@ -1,12 +1,13 @@
 # LeadHub Service CI/CD Pipeline
+# Handles testing, building, and deployment for the LeadHub service
 
 name: LeadHub CI/CD
 
 on:
   push:
-    branches: [ master, development, feature/* ]
+    branches: [ main, develop, feature/* ]
   pull_request:
-    branches: [ master, development ]
+    branches: [ main, develop ]
   release:
     types: [ published ]
 
@@ -129,7 +130,7 @@ jobs:
   deploy-staging:
     runs-on: ubuntu-latest
     needs: [test, build-and-scan]
-    if: github.ref == 'refs/heads/development'
+    if: github.ref == 'refs/heads/develop'
     
     steps:
     - name: Checkout code
