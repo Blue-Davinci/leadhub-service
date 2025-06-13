@@ -16,6 +16,7 @@ type Models struct {
 	Users       UserModel
 	Tokens      TokenModel
 	Permissions PermissionModel
+	TradeLeads  TradeLeadModel
 }
 
 func NewModels(db *database.Queries) Models {
@@ -24,5 +25,6 @@ func NewModels(db *database.Queries) Models {
 		Users:       UserModel{DB: db},
 		Tokens:      TokenModel{DB: db},
 		Permissions: PermissionModel{DB: db},
+		TradeLeads:  TradeLeadModel{DB: db},
 	}
 }
