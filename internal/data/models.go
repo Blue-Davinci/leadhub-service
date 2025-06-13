@@ -12,15 +12,17 @@ var (
 )
 
 type Models struct {
-	Tenants TenantsModel
-	Users   UserModel
-	Tokens  TokenModel
+	Tenants     TenantsModel
+	Users       UserModel
+	Tokens      TokenModel
+	Permissions PermissionModel
 }
 
 func NewModels(db *database.Queries) Models {
 	return Models{
-		Tenants: TenantsModel{DB: db},
-		Users:   UserModel{DB: db},
-		Tokens:  TokenModel{DB: db},
+		Tenants:     TenantsModel{DB: db},
+		Users:       UserModel{DB: db},
+		Tokens:      TokenModel{DB: db},
+		Permissions: PermissionModel{DB: db},
 	}
 }
