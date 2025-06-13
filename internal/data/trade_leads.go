@@ -48,7 +48,7 @@ func ValidateTradeLead(v *validator.Validator, lead *TradeLead) {
 	// should validate tenant ID, title, description, and value
 	v.Check(lead.Title != "", "title", "must be provided")
 	v.Check(len(lead.Description) <= 1000, "description", "must not be more than 1000 characters long")
-	v.Check(lead.Value.GreaterThanOrEqual(decimal.Zero), "value", "must be a non-negative number")
+	v.Check(lead.Value.GreaterThan(decimal.Zero), "value", "must be a non-negative or non-zero number")
 }
 
 // CreateTradeLead() creates a new trade lead in the database.
