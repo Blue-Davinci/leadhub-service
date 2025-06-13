@@ -12,7 +12,14 @@ import (
 )
 
 const adminGetAllTenants = `-- name: AdminGetAllTenants :many
-SELECT id, name, contact_email, description, created_at, updated_at
+SELECT count(*) OVER() AS total_count,
+    id, 
+    name, 
+    contact_email, 
+    description,
+    version, 
+    created_at, 
+    updated_at
 FROM tenants
 WHERE ($1 = '' OR to_tsvector('simple', name) @@ plainto_tsquery('simple', $1))
 ORDER BY created_at DESC
@@ -26,10 +33,12 @@ type AdminGetAllTenantsParams struct {
 }
 
 type AdminGetAllTenantsRow struct {
+	TotalCount   int64
 	ID           int64
 	Name         string
 	ContactEmail string
 	Description  sql.NullString
+	Version      int32
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
@@ -44,10 +53,12 @@ func (q *Queries) AdminGetAllTenants(ctx context.Context, arg AdminGetAllTenants
 	for rows.Next() {
 		var i AdminGetAllTenantsRow
 		if err := rows.Scan(
+			&i.TotalCount,
 			&i.ID,
 			&i.Name,
 			&i.ContactEmail,
 			&i.Description,
+			&i.Version,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -90,28 +101,27 @@ func (q *Queries) CreateTenant(ctx context.Context, arg CreateTenantParams) (Cre
 }
 
 const getTenantByID = `-- name: GetTenantByID :one
-SELECT id, name, contact_email, description, created_at, updated_at
+SELECT 
+    id, 
+    name, 
+    contact_email, 
+    description, 
+    version,
+    created_at, 
+    updated_at
 FROM tenants
 WHERE id = $1
 `
 
-type GetTenantByIDRow struct {
-	ID           int64
-	Name         string
-	ContactEmail string
-	Description  sql.NullString
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-}
-
-func (q *Queries) GetTenantByID(ctx context.Context, id int64) (GetTenantByIDRow, error) {
+func (q *Queries) GetTenantByID(ctx context.Context, id int64) (Tenant, error) {
 	row := q.db.QueryRowContext(ctx, getTenantByID, id)
-	var i GetTenantByIDRow
+	var i Tenant
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.ContactEmail,
 		&i.Description,
+		&i.Version,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -124,8 +134,8 @@ SET
     name = $2,
     contact_email = $3,
     description = $4
-WHERE id = $1
-RETURNING id, name, contact_email, description, created_at, updated_at
+WHERE id = $1 AND version = $5
+RETURNING version, updated_at
 `
 
 type UpdateTenantParams struct {
@@ -133,15 +143,12 @@ type UpdateTenantParams struct {
 	Name         string
 	ContactEmail string
 	Description  sql.NullString
+	Version      int32
 }
 
 type UpdateTenantRow struct {
-	ID           int64
-	Name         string
-	ContactEmail string
-	Description  sql.NullString
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	Version   int32
+	UpdatedAt time.Time
 }
 
 func (q *Queries) UpdateTenant(ctx context.Context, arg UpdateTenantParams) (UpdateTenantRow, error) {
@@ -150,15 +157,9 @@ func (q *Queries) UpdateTenant(ctx context.Context, arg UpdateTenantParams) (Upd
 		arg.Name,
 		arg.ContactEmail,
 		arg.Description,
+		arg.Version,
 	)
 	var i UpdateTenantRow
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.ContactEmail,
-		&i.Description,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
+	err := row.Scan(&i.Version, &i.UpdatedAt)
 	return i, err
 }
