@@ -1,0 +1,106 @@
+# =============================================================================
+# LeadHub Service - Simple Production Test (Core Components Only)
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # =============================================================================
+  # PostgreSQL Database
+  # =============================================================================
+  db:
+    image: postgres:16-alpine
+    container_name: leadhub-postgres-prod-test
+    environment:
+      POSTGRES_DB: leadhub
+      POSTGRES_USER: leadhub
+      POSTGRES_PASSWORD: leadhub_prod_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U leadhub -d leadhub"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # =============================================================================
+  # API Service (Load Balanced)
+  # =============================================================================
+  api-1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: leadhub-api-1-test
+    environment:
+      - LEADHUB_ENV=production
+      - LEADHUB_DB_DSN=postgres://leadhub:leadhub_prod_password@db:5432/leadhub?sslmode=disable
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - backend
+      - frontend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  api-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: leadhub-api-2-test
+    environment:
+      - LEADHUB_ENV=production
+      - LEADHUB_DB_DSN=postgres://leadhub:leadhub_prod_password@db:5432/leadhub?sslmode=disable
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - backend
+      - frontend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # =============================================================================
+  # NGINX Reverse Proxy
+  # =============================================================================
+  nginx:
+    image: nginx:1.26-alpine
+    container_name: leadhub-nginx-test
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      - api-1
+      - api-2
+    networks:
+      - frontend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
