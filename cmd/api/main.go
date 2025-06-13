@@ -20,7 +20,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// a quick variable to hold our version. ToDo: Change this.
+// a quick variable to hold our version.
 var (
 	version = vcs.Version()
 )

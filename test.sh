@@ -17,7 +17,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Function to print colored output
-print_status() {
+print_status() { 
     echo -e "${BLUE}[INFO]${NC} $1"
 }
 

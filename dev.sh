@@ -1,11 +1,11 @@
 #!/bin/bash
 # LeadHub Development Script
 # Sets up environment for local API + containerized PostgreSQL
-# Usage: ./dev.sh [--reset]
+# Usage: ./dev.sh [--reset] 
 
 # Check for reset flag
 if [[ "$1" == "--reset" ]]; then
-    echo "🔄 Resetting database to clean state..."
+    echo "Resetting database to clean state..."
     pkill -f "go run ./cmd/api" 2>/dev/null || true
     docker-compose down -v
     docker volume prune -f
