@@ -78,7 +78,7 @@ func (q *Queries) AdminGetAllTenants(ctx context.Context, arg AdminGetAllTenants
 const createTenant = `-- name: CreateTenant :one
 INSERT INTO tenants (name, contact_email, description)
 VALUES ($1, $2, $3)
-RETURNING id, created_at, updated_at
+RETURNING id, version, created_at, updated_at
 `
 
 type CreateTenantParams struct {
@@ -89,6 +89,7 @@ type CreateTenantParams struct {
 
 type CreateTenantRow struct {
 	ID        int64
+	Version   int32
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -96,7 +97,12 @@ type CreateTenantRow struct {
 func (q *Queries) CreateTenant(ctx context.Context, arg CreateTenantParams) (CreateTenantRow, error) {
 	row := q.db.QueryRowContext(ctx, createTenant, arg.Name, arg.ContactEmail, arg.Description)
 	var i CreateTenantRow
-	err := row.Scan(&i.ID, &i.CreatedAt, &i.UpdatedAt)
+	err := row.Scan(
+		&i.ID,
+		&i.Version,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
 	return i, err
 }
 

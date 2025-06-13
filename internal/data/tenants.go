@@ -118,6 +118,7 @@ func (m TenantsModel) CreateTenant(tenant *Tenant) error {
 	}
 	// Populate the tenant struct with the new tenant data
 	tenant.ID = newTenant.ID
+	tenant.Version = newTenant.Version
 	tenant.CreatedAt = newTenant.CreatedAt
 	tenant.UpdatedAt = newTenant.UpdatedAt
 	// we are good to go

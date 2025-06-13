@@ -1,7 +1,7 @@
 -- name: CreateTenant :one
 INSERT INTO tenants (name, contact_email, description)
 VALUES ($1, $2, $3)
-RETURNING id, created_at, updated_at;
+RETURNING id, version, created_at, updated_at;
 
 -- name: GetTenantByID :one
 SELECT 

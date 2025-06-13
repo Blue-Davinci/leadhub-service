@@ -138,7 +138,7 @@ INSERT INTO trade_leads (
 ) VALUES (
   $1, $2, $3, $4
 )
-RETURNING id,tenant_id, version, created_at, updated_at
+RETURNING id,tenant_id, status, version, created_at, updated_at
 `
 
 type CreateTradeLeadParams struct {
@@ -151,6 +151,7 @@ type CreateTradeLeadParams struct {
 type CreateTradeLeadRow struct {
 	ID        int64
 	TenantID  int64
+	Status    string
 	Version   int32
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -167,6 +168,7 @@ func (q *Queries) CreateTradeLead(ctx context.Context, arg CreateTradeLeadParams
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
+		&i.Status,
 		&i.Version,
 		&i.CreatedAt,
 		&i.UpdatedAt,
