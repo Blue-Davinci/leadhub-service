@@ -69,8 +69,8 @@ func (m TenantsModel) AdminGetAllTenants(tenantName string, filters Filters) ([]
 	// get all tenants
 	tenants, err := m.DB.AdminGetAllTenants(ctx, database.AdminGetAllTenantsParams{
 		Column1: tenantName,
-		Limit:   int32(filters.limit()),
-		Offset:  int32(filters.offset()),
+		Limit:   filters.limitInt32(),
+		Offset:  filters.offsetInt32(),
 	})
 	if err != nil {
 		switch {

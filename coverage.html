@@ -61,7 +61,7 @@
 				
 				<option value="file2">github.com/Blue-Davinci/leadhub-service/cmd/api/healthcheck.go (75.0%)</option>
 				
-				<option value="file3">github.com/Blue-Davinci/leadhub-service/cmd/api/helpers.go (12.8%)</option>
+				<option value="file3">github.com/Blue-Davinci/leadhub-service/cmd/api/helpers.go (13.6%)</option>
 				
 				<option value="file4">github.com/Blue-Davinci/leadhub-service/cmd/api/main.go (0.0%)</option>
 				
@@ -322,8 +322,11 @@ func (app *application) writeJSON(w http.ResponseWriter, status int, data envelo
         // Add the "Content-Type: application/json" header, then write the status code
         <span class="cov8" title="1">w.Header().Set("Content-Type", "application/json")
         w.WriteHeader(status)
-        w.Write(js)
-        return nil</span>
+        _, err = w.Write(js)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov8" title="1">return nil</span>
 }
 
 func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any) error <span class="cov0" title="0">{
@@ -1148,6 +1151,7 @@ func (app *application) server() error <span class="cov0" title="0">{
 		<pre class="file" id="file8" style="display: none">package main
 
 import (
+        "errors"
         "net/http"
 
         "github.com/Blue-Davinci/leadhub-service/internal/data"
@@ -1325,6 +1329,11 @@ func (app *application) updateTenantHandler(w http.ResponseWriter, r *http.Reque
                 return
         }</span>
         // Update the tenant in the database.
+        // Validate versionID can be safely converted to int32
+        <span class="cov0" title="0">if versionID &gt; int64(^uint32(0)&gt;&gt;1) || versionID &lt; int64(^(^uint32(0)&gt;&gt;1)) </span><span class="cov0" title="0">{
+                app.badRequestResponse(w, r, errors.New("version ID out of range"))
+                return
+        }</span>
         <span class="cov0" title="0">if err := app.models.Tenants.UpdateTenant(tenant, int32(versionID)); err != nil </span><span class="cov0" title="0">{
                 switch </span>{
                 case err == data.ErrGeneralRecordNotFound:<span class="cov0" title="0">
@@ -1348,6 +1357,7 @@ func (app *application) updateTenantHandler(w http.ResponseWriter, r *http.Reque
 		<pre class="file" id="file9" style="display: none">package main
 
 import (
+        "errors"
         "net/http"
 
         "github.com/Blue-Davinci/leadhub-service/internal/data"
@@ -1528,6 +1538,11 @@ func (app *application) adminUpdateTradeLeadStatusHandler(w http.ResponseWriter,
                 <span class="cov0" title="0">return</span>
         }
         // let us update the lead status
+        // Validate versionID can be safely converted to int32
+        <span class="cov0" title="0">if versionID &gt; int64(^uint32(0)&gt;&gt;1) || versionID &lt; int64(^(^uint32(0)&gt;&gt;1)) </span><span class="cov0" title="0">{
+                app.badRequestResponse(w, r, errors.New("version ID out of range"))
+                return
+        }</span>
         <span class="cov0" title="0">err = app.models.TradeLeads.AdminUpdateTradeLeadStatus(leadID, int32(versionID), lead)
         if err != nil </span><span class="cov0" title="0">{
                 switch </span>{
@@ -1848,8 +1863,23 @@ func (f Filters) sortDirection() string <span class="cov0" title="0">{
 func (f Filters) limit() int <span class="cov0" title="0">{
         return f.PageSize
 }</span>
+
 func (f Filters) offset() int <span class="cov0" title="0">{
         return (f.Page - 1) * f.PageSize
+}</span>
+
+// limitInt32 returns the limit as int32, safe for use with database queries
+func (f Filters) limitInt32() int32 <span class="cov0" title="0">{
+        limit := f.limit()
+        // Since we validate PageSize &lt;= 100, this is always safe
+        return int32(limit) // #nosec G115 -- PageSize is validated to be &lt;= 100
+}</span>
+
+// offsetInt32 returns the offset as int32, safe for use with database queries
+func (f Filters) offsetInt32() int32 <span class="cov0" title="0">{
+        offset := f.offset()
+        // Since we validate Page &lt;= 10M and PageSize &lt;= 100, max offset is ~1B which fits in int32
+        return int32(offset) // #nosec G115 -- Validated bounds ensure this conversion is safe
 }</span>
 
 // The calculateMetadata() function calculates the appropriate pagination metadata
@@ -2163,8 +2193,8 @@ func (m TenantsModel) AdminGetAllTenants(tenantName string, filters Filters) ([]
         // get all tenants
         tenants, err := m.DB.AdminGetAllTenants(ctx, database.AdminGetAllTenantsParams{
                 Column1: tenantName,
-                Limit:   int32(filters.limit()),
-                Offset:  int32(filters.offset()),
+                Limit:   filters.limitInt32(),
+                Offset:  filters.offsetInt32(),
         })
         if err != nil </span><span class="cov0" title="0">{
                 switch </span>{
@@ -2503,8 +2533,8 @@ func (m TradeLeadModel) GetAllLeadsByTenantID(tenantID int64, name string, filte
         leads, err := m.DB.GetAllLeadsByTenantID(ctx, database.GetAllLeadsByTenantIDParams{
                 TenantID: tenantID,
                 Column2:  name,
-                Limit:    int32(filters.limit()),
-                Offset:   int32(filters.offset()),
+                Limit:    filters.limitInt32(),
+                Offset:   filters.offsetInt32(),
         })
         if err != nil </span><span class="cov0" title="0">{
                 switch </span>{
@@ -2538,8 +2568,8 @@ func (m TradeLeadModel) AdminGetAllTradeLeads(name string, filters Filters) ([]*
         // get all trade leads
         leads, err := m.DB.AdminGetAllTradeLeads(ctx, database.AdminGetAllTradeLeadsParams{
                 Column1: name,
-                Limit:   int32(filters.limit()),
-                Offset:  int32(filters.offset()),
+                Limit:   filters.limitInt32(),
+                Offset:  filters.offsetInt32(),
         })
         if err != nil </span><span class="cov0" title="0">{
                 switch </span>{

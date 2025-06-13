@@ -58,8 +58,23 @@ func (f Filters) sortDirection() string {
 func (f Filters) limit() int {
 	return f.PageSize
 }
+
 func (f Filters) offset() int {
 	return (f.Page - 1) * f.PageSize
+}
+
+// limitInt32 returns the limit as int32, safe for use with database queries
+func (f Filters) limitInt32() int32 {
+	limit := f.limit()
+	// Since we validate PageSize <= 100, this is always safe
+	return int32(limit) // #nosec G115 -- PageSize is validated to be <= 100
+}
+
+// offsetInt32 returns the offset as int32, safe for use with database queries
+func (f Filters) offsetInt32() int32 {
+	offset := f.offset()
+	// Since we validate Page <= 10M and PageSize <= 100, max offset is ~1B which fits in int32
+	return int32(offset) // #nosec G115 -- Validated bounds ensure this conversion is safe
 }
 
 // The calculateMetadata() function calculates the appropriate pagination metadata

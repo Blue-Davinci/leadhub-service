@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/Blue-Davinci/leadhub-service/internal/data"
@@ -178,6 +179,11 @@ func (app *application) updateTenantHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	// Update the tenant in the database.
+	// Validate versionID can be safely converted to int32
+	if versionID > int64(^uint32(0)>>1) || versionID < int64(^(^uint32(0)>>1)) {
+		app.badRequestResponse(w, r, errors.New("version ID out of range"))
+		return
+	}
 	if err := app.models.Tenants.UpdateTenant(tenant, int32(versionID)); err != nil {
 		switch {
 		case err == data.ErrGeneralRecordNotFound:
