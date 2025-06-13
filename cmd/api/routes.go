@@ -35,6 +35,7 @@ func (app *application) routes() http.Handler {
 	v1Router.Mount("/", app.generalRoutes())
 	v1Router.Mount("/api", app.userRoutes())
 	v1Router.With(dynamicMiddleware.Then).Mount("/tenants", app.tenantRoutes(&adminPermissionMiddleware))
+	v1Router.With(dynamicMiddleware.Then).Mount("/trade_leads", app.tradeLeadsRoutes(&adminPermissionMiddleware))
 
 	// Moount the v1Router to the main base router
 	router.Mount("/v1", v1Router)
@@ -76,4 +77,20 @@ func (app *application) tenantRoutes(adminPermissionMiddleware *alice.Chain) chi
 	tenantRoutes.With(adminPermissionMiddleware.Then).Get("/admin", app.adminGetAllTenantsHandler)
 	tenantRoutes.With(adminPermissionMiddleware.Then).Patch("/admin/{tenantID:[0-9]+}/{versionID:[0-9]+}", app.updateTenantHandler)
 	return tenantRoutes
+}
+
+// tradeLeadsRoutes() is a method that returns a chi.Router that contains all the routes for the trade leads
+func (app *application) tradeLeadsRoutes(adminPermissionMiddleware *alice.Chain) chi.Router {
+	tradeLeadsRoutes := chi.NewRouter()
+	// /trade_leads : for creating a new trade lead
+	tradeLeadsRoutes.Post("/", app.createTradeLeadHandler)
+	tradeLeadsRoutes.Get("/", app.getAllLeadsByTenantIDHandler)
+
+	// admin routes
+	tradeLeadsRoutes.With(adminPermissionMiddleware.Then).Get("/admin", app.adminGetAllTradeLeadsHandler)
+	// pathc adminUpdateTradeLeadStatusHandler
+	tradeLeadsRoutes.With(adminPermissionMiddleware.Then).Patch("/admin/{leadID:[0-9]+}/{versionID:[0-9]+}", app.adminUpdateTradeLeadStatusHandler)
+	// get trade lead stats
+	tradeLeadsRoutes.With(adminPermissionMiddleware.Then).Get("/admin/stats", app.adminGetTradeLeadStatsHandler)
+	return tradeLeadsRoutes
 }
