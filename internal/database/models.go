@@ -9,11 +9,31 @@ import (
 	"time"
 )
 
+type ApiKey struct {
+	ApiKey []byte
+	UserID int64
+	Expiry time.Time
+	Scope  string
+}
+
 type Tenant struct {
 	ID           int64
 	Name         string
 	ContactEmail string
 	Description  sql.NullString
+	Version      int32
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+type User struct {
+	ID           int64
+	TenantID     int64
+	Name         string
+	Email        string
+	PasswordHash []byte
+	Activated    bool
+	Version      int32
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }

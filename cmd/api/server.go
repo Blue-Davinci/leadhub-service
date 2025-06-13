@@ -41,6 +41,9 @@ func (app *application) server() error {
 		if err != nil {
 			shutdownChan <- err
 		}
+		app.logger.Info("completing background tasks...", zap.String("addr", srv.Addr))
+		// wait for any background tasks to complete
+		app.wg.Wait()
 		// Call Shutdown() on our server, passing in the context we just made.
 		shutdownChan <- srv.Shutdown(ctx)
 	}()

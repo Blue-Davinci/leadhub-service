@@ -45,7 +45,7 @@ func (m TenantsModel) GetTenantByID(id int64) (*Tenant, error) {
 
 func populateTenants(tenantRow any) *Tenant {
 	switch tenantRow := tenantRow.(type) {
-	case database.Tenant:
+	case database.GetTenantByIDRow:
 		return &Tenant{
 			ID:           tenantRow.ID,
 			Name:         tenantRow.Name,

@@ -100,7 +100,7 @@ func main() {
 	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")
 	// URL configuration
 	flag.StringVar(&cfg.url.activationURL, "activation-url", "http://localhost:4000/v1/api/activated/token=", "Activation URL for user registration")
-	flag.StringVar(&cfg.url.authenticationURL, "authentication-url", "http://localhost:4000/v1/api", "Authentication URL for user login")
+	flag.StringVar(&cfg.url.authenticationURL, "authentication-url", "http://localhost:4000/v1/api/authentication", "Authentication URL for user login")
 	// CORS configuration
 	flag.Func("cors-trusted-origins", "Trusted CORS origins (space separated)", func(val string) error {
 		cfg.cors.trustedOrigins = strings.Fields(val)
