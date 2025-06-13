@@ -57,7 +57,7 @@ INSERT INTO trade_leads (
 ) VALUES (
   $1, $2, $3, $4
 )
-RETURNING id,tenant_id, version, created_at, updated_at;
+RETURNING id,tenant_id, status, version, created_at, updated_at;
 
 -- name: AdminUpdateTradeLeadStatus :one
 UPDATE trade_leads

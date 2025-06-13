@@ -78,6 +78,7 @@ func (m TradeLeadModel) CreateTradeLead(tenantID int64, tenantLead *TradeLead) e
 	tenantLead.ID = newLead.ID
 	tenantLead.TenantID = newLead.TenantID
 	tenantLead.Version = newLead.Version
+	tenantLead.Status = newLead.Status
 	tenantLead.CreatedAt = newLead.CreatedAt
 	tenantLead.UpdatedAt = newLead.UpdatedAt
 	// we are good to go
