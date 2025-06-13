@@ -5,6 +5,7 @@ CREATE TABLE
         name TEXT NOT NULL UNIQUE,
         contact_email TEXT NOT NULL,
         description TEXT,
+        version INTEGER NOT NULL DEFAULT 1,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
@@ -20,6 +21,10 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
     NEW.updated_at = NOW();
+    -- Ensure the version is incremented on update
+    IF TG_OP = 'UPDATE' THEN
+        NEW.version = NEW.version + 1;
+    END IF;
     RETURN NEW;
 END;
 $$;

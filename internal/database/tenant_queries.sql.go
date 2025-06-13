@@ -25,15 +25,24 @@ type AdminGetAllTenantsParams struct {
 	Offset  int32
 }
 
-func (q *Queries) AdminGetAllTenants(ctx context.Context, arg AdminGetAllTenantsParams) ([]Tenant, error) {
+type AdminGetAllTenantsRow struct {
+	ID           int64
+	Name         string
+	ContactEmail string
+	Description  sql.NullString
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+func (q *Queries) AdminGetAllTenants(ctx context.Context, arg AdminGetAllTenantsParams) ([]AdminGetAllTenantsRow, error) {
 	rows, err := q.db.QueryContext(ctx, adminGetAllTenants, arg.Column1, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Tenant
+	var items []AdminGetAllTenantsRow
 	for rows.Next() {
-		var i Tenant
+		var i AdminGetAllTenantsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -86,9 +95,18 @@ FROM tenants
 WHERE id = $1
 `
 
-func (q *Queries) GetTenantByID(ctx context.Context, id int64) (Tenant, error) {
+type GetTenantByIDRow struct {
+	ID           int64
+	Name         string
+	ContactEmail string
+	Description  sql.NullString
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+func (q *Queries) GetTenantByID(ctx context.Context, id int64) (GetTenantByIDRow, error) {
 	row := q.db.QueryRowContext(ctx, getTenantByID, id)
-	var i Tenant
+	var i GetTenantByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
@@ -117,14 +135,23 @@ type UpdateTenantParams struct {
 	Description  sql.NullString
 }
 
-func (q *Queries) UpdateTenant(ctx context.Context, arg UpdateTenantParams) (Tenant, error) {
+type UpdateTenantRow struct {
+	ID           int64
+	Name         string
+	ContactEmail string
+	Description  sql.NullString
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+func (q *Queries) UpdateTenant(ctx context.Context, arg UpdateTenantParams) (UpdateTenantRow, error) {
 	row := q.db.QueryRowContext(ctx, updateTenant,
 		arg.ID,
 		arg.Name,
 		arg.ContactEmail,
 		arg.Description,
 	)
-	var i Tenant
+	var i UpdateTenantRow
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
