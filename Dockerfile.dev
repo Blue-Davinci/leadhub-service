@@ -1,0 +1,48 @@
+# =============================================================================
+# LeadHub Service - Development Dockerfile
+# =============================================================================
+# This Dockerfile is optimized for development with hot reloading capabilities
+# It includes development tools and debugging capabilities
+
+FROM golang:1.24.4-alpine AS development
+
+# Install development dependencies
+RUN apk add --no-cache \
+    git \
+    ca-certificates \
+    tzdata \
+    wget \
+    curl \
+    bash \
+    make
+
+# Install development tools
+RUN go install github.com/air-verse/air@latest
+RUN go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+
+# Create non-root user
+RUN adduser -D -g '' appuser
+
+# Set working directory
+WORKDIR /app
+
+# Copy go.mod and go.sum
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Change ownership to appuser
+RUN chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
+
+# Expose port
+EXPOSE 4000
+
+# Default command for development (with hot reloading)
+CMD ["air", "-c", ".air.toml"]
