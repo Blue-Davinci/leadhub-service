@@ -31,6 +31,18 @@ type Tenant struct {
 	UpdatedAt    time.Time
 }
 
+type TradeLead struct {
+	ID          int64
+	TenantID    int64
+	Title       string
+	Description sql.NullString
+	Status      string
+	Value       string
+	Version     int32
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
 type User struct {
 	ID           int64
 	TenantID     int64
