@@ -22,7 +22,8 @@ const (
 )
 
 var (
-	ErrDuplicateEmail = errors.New("duplicate email address")
+	ErrDuplicateEmail  = errors.New("duplicate email address")
+	ErrInvalidTenantID = errors.New("invalid tenant id")
 )
 
 // Declare a new AnonymousUser variable.
@@ -139,6 +140,8 @@ func (m UserModel) Insert(user *User) error {
 		switch {
 		case strings.Contains(err.Error(), "users_email_key"):
 			return ErrDuplicateEmail
+		case strings.Contains(err.Error(), "users_tenant_id_fkey"):
+			return ErrInvalidTenantID
 		default:
 			return err
 		}

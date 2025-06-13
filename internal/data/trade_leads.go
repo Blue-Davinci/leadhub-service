@@ -189,6 +189,9 @@ func (m TradeLeadModel) AdminUpdateTradeLeadStatus(leadID int64, version int32, 
 		switch {
 		case strings.Contains(err.Error(), "trade_leads_status_check"):
 			return ErrInvalidTradeLeadStatus
+		//sqlnoRows error is returned when no rows are found
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrGeneralRecordNotFound
 		default:
 			return err
 		}

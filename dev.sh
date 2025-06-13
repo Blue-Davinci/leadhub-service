@@ -1,6 +1,16 @@
 #!/bin/bash
 # LeadHub Development Script
 # Sets up environment for local API + containerized PostgreSQL
+# Usage: ./dev.sh [--reset]
+
+# Check for reset flag
+if [[ "$1" == "--reset" ]]; then
+    echo "🔄 Resetting database to clean state..."
+    pkill -f "go run ./cmd/api" 2>/dev/null || true
+    docker-compose down -v
+    docker volume prune -f
+    echo "Database reset complete!"
+fi
 
 echo "Starting LeadHub Development Environment..."
 
@@ -14,6 +24,16 @@ docker stop leadhub-api leadhub-nginx 2>/dev/null || true
 
 # Set environment variables for local development
 echo "🔧 Setting environment variables..."
+
+# Load .env file if it exists
+if [ -f "cmd/api/.env" ]; then
+    echo "Loading environment variables from cmd/api/.env..."
+    set -a  # automatically export all variables
+    source cmd/api/.env
+    set +a  # stop automatically exporting
+fi
+
+# Override DB settings for local development
 export DB_PASSWORD=leadhub_dev_password
 export DB_USER=leadhub
 export DB_HOST=localhost

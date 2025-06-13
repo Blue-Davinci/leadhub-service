@@ -7,6 +7,7 @@ import (
 	"github.com/Blue-Davinci/leadhub-service/internal/data"
 	"github.com/Blue-Davinci/leadhub-service/internal/validator"
 	"github.com/shopspring/decimal"
+	"go.uber.org/zap"
 )
 
 func (app *application) createTradeLeadHandler(w http.ResponseWriter, r *http.Request) {
@@ -170,6 +171,7 @@ func (app *application) adminUpdateTradeLeadStatusHandler(w http.ResponseWriter,
 		app.badRequestResponse(w, r, err)
 		return
 	}
+	app.logger.Info("Version and Lead ID", zap.Int64("leadID", leadID), zap.Int64("versionID", versionID))
 	// check if the lead exists
 	lead, err := app.models.TradeLeads.GetTradeLeadByID(leadID)
 	if err != nil {
@@ -182,8 +184,8 @@ func (app *application) adminUpdateTradeLeadStatusHandler(w http.ResponseWriter,
 		return
 	}
 	// let us update the lead status
-	// Validate versionID can be safely converted to int32
-	if versionID > int64(^uint32(0)>>1) || versionID < int64(^(^uint32(0)>>1)) {
+	// Validate versionID can be safely converted to int32 (range: -2,147,483,648 to 2,147,483,647)
+	if versionID > 2147483647 || versionID < -2147483648 {
 		app.badRequestResponse(w, r, errors.New("version ID out of range"))
 		return
 	}

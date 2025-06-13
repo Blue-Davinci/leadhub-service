@@ -36,6 +36,10 @@ BEFORE UPDATE ON tenants
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
+-- Insert default tenant
+INSERT INTO tenants (name, contact_email, description) VALUES 
+('TradeHub KE', 'admin@tradehub.co.ke', 'The center of anything trading, Kenya!');
+
 -- +goose Down
 DROP TRIGGER IF EXISTS update_tenants_updated_at ON tenants;
 DROP FUNCTION IF EXISTS update_updated_at_column();
