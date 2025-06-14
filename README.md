@@ -216,6 +216,12 @@ vim internal/sql/schema/002_create_users.sql
 - **Staging**: Automated deployment from development branch  
 - **Production**: Release-based deployment with health monitoring
 
+### Monitoring & Observability
+- **Prometheus**: Metrics collection and time-series database
+- **Grafana**: Dashboard visualization and real-time monitoring
+- **Health Checks**: Automated service health monitoring
+- **Access**: Grafana at http://localhost:3000 (credentials in environment files)
+
 ### CI/CD Pipeline
 - **Automated Testing**: Unit, integration, and security tests
 - **Container Security**: Vulnerability scanning with Trivy
@@ -226,6 +232,7 @@ vim internal/sql/schema/002_create_users.sql
 ### Documentation
 - **[Complete Deployment Guide](./docs/DEPLOYMENT.md)** - Comprehensive deployment procedures
 - **[Database Schema Management](./docs/DATABASE_SCHEMA_MANAGEMENT.md)** - Schema workflow and automation
+- **[Monitoring Guide](./docs/MONITORING.md)** - Prometheus and Grafana setup and usage
 - **[DevOps Guide](./docs/DEVOPS.md)** - Infrastructure and operational procedures  
 - **[Script Organization](./docs/SCRIPT_ORGANIZATION.md)** - Script management documentation
 
@@ -328,6 +335,7 @@ Authorization: Bearer <token>
 ### Core Documentation
 - **[Deployment Guide](./docs/DEPLOYMENT.md)** - Complete deployment procedures and architecture
 - **[Database Schema Management](./docs/DATABASE_SCHEMA_MANAGEMENT.md)** - Automated schema workflow
+- **[Monitoring Guide](./docs/MONITORING.md)** - Prometheus and Grafana monitoring setup
 - **[DevOps Guide](./docs/DEVOPS.md)** - Infrastructure management and best practices
 - **[Implementation Summary](./IMPLEMENTATION_SUMMARY.md)** - Technical overview and decisions
 

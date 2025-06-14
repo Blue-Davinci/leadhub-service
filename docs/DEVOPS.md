@@ -75,8 +75,14 @@ The production Dockerfile uses multi-stage builds for optimal image size:
 - `api`: Go application instances (scalable)
 - `nginx`: Reverse proxy and load balancer
 - `db`: PostgreSQL database with persistent storage
-- `prometheus`: Metrics collection
-- `grafana`: Metrics visualization
+- `prometheus`: Metrics collection and monitoring
+- `grafana`: Dashboard visualization and alerting
+
+### Monitoring Stack
+- **Prometheus**: http://localhost:9090 - Metrics collection
+- **Grafana**: http://localhost:3000 - Dashboard visualization
+- **Credentials**: Managed via environment variables (see [Monitoring Guide](./MONITORING.md))
+- **Security**: No hardcoded passwords, environment-specific configuration
 
 ## 🔄 CI/CD Pipeline
 

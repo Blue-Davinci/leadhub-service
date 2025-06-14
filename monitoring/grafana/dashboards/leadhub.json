@@ -1,0 +1,48 @@
+{
+  "id": null,
+  "title": "LeadHub Monitoring Dashboard",
+  "tags": ["leadhub", "monitoring"],
+  "style": "dark",
+  "timezone": "browser",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Prometheus Status",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "up{job=\"prometheus\"}",
+          "legendFormat": "Prometheus"
+        }
+      ],
+      "gridPos": {"h": 6, "w": 12, "x": 0, "y": 0},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "steps": [
+              {"color": "red", "value": 0},
+              {"color": "green", "value": 1}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "System Uptime",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "prometheus_build_info",
+          "legendFormat": "Build Info"
+        }
+      ],
+      "gridPos": {"h": 6, "w": 12, "x": 12, "y": 0}
+    }
+  ],
+  "time": {"from": "now-1h", "to": "now"},
+  "refresh": "10s",
+  "schemaVersion": 16,
+  "version": 1
+}
