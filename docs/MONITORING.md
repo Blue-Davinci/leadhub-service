@@ -60,6 +60,14 @@ GRAFANA_ADMIN_PASSWORD=your_secure_grafana_password
 - **Prometheus Targets**: Displays all monitored services and their status
 - **Real-time Updates**: Auto-refreshes every 5 seconds
 
+#### Dashboard Preview
+![LeadHub Monitoring Dashboard](./images/grafana-dashboard.png)
+*LeadHub Service monitoring dashboard showing service health and metrics*
+
+#### Login Interface
+![Grafana Login](./images/grafana-login.png)
+*Grafana login interface with secure credential management*
+
 ## 🔧 Configuration Files
 
 ### Prometheus Configuration
