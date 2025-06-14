@@ -98,7 +98,21 @@ cd leadhub-service
 ./scripts.sh test
 
 # Access application
-curl http://localhost:4000/v1/health
+curl http://localhost/v1/health
+
+# Access monitoring services
+# Grafana Dashboard: http://localhost:3000 (credentials in .env files)
+# Prometheus Metrics: http://localhost:9090
+# Database Admin: http://localhost:8080 (adminer)
+```
+
+**Service Access Summary:**
+- **API**: http://localhost/v1/health (via NGINX)
+- **Grafana**: http://localhost:3000 (monitoring dashboards)
+- **Prometheus**: http://localhost:9090 (metrics collection)
+- **Adminer**: http://localhost:8080 (database administration)
+
+**Note**: Grafana credentials are managed via environment variables for security. See [Monitoring Guide](./MONITORING.md) for details.
 ```
 
 ### **Production Deployment**
