@@ -11,6 +11,7 @@ func (app *application) healthcheckHandler(w http.ResponseWriter, r *http.Reques
 		"status":      "available",
 		"environment": app.config.env,
 		"version":     version,
+		"database":    "okay",
 	}
 
 	// Write successful health check response

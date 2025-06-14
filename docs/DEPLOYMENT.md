@@ -62,20 +62,40 @@ This document demonstrates the complete implementation of DevOps practices for t
 - Make (for build automation)
 ```
 
+## 🚀 **Quick Start Deployment**
+
+### **Script Management System**
+
+LeadHub includes a comprehensive script management system for streamlined operations:
+
+```bash
+# View all available commands
+./scripts.sh help
+
+# Core deployment commands  
+./scripts.sh deploy staging     # Deploy to staging
+./scripts.sh deploy production  # Deploy to production
+./scripts.sh validate          # Validate deployment
+./scripts.sh teardown staging  # Clean teardown
+
+# Database schema management
+./scripts.sh generate          # Generate Docker init files from migrations
+```
+
 ### **Local Development**
 ```bash
 # Clone and setup
 git clone <repository-url>
 cd leadhub-service
 
-# Start development environment
-make docker/dev
+# Quick development setup
+./scripts.sh dev
 
-# Run database migrations
-make migrate/up
+# With database reset
+./scripts/development/dev.sh --reset
 
 # Run tests
-make test/all
+./scripts.sh test
 
 # Access application
 curl http://localhost:4000/v1/health
@@ -83,11 +103,49 @@ curl http://localhost:4000/v1/health
 
 ### **Production Deployment**
 ```bash
-# Build production image
-make docker/build
+# 1. Generate database schema files
+./scripts.sh generate
 
-# Deploy to staging
-make deploy/staging
+# 2. Deploy to staging for testing
+./scripts.sh deploy staging
+
+# 3. Validate staging deployment
+./scripts.sh validate
+
+# 4. Deploy to production
+./scripts.sh deploy production
+```
+
+## 🗄️ **Database Schema Management**
+
+### **Automated Schema Workflow**
+
+LeadHub uses a **single source of truth** approach with automatic Docker initialization file generation:
+
+```bash
+# 1. Edit schema files (primary source)
+vim internal/sql/schema/006_new_table.sql
+
+# 2. Generate Docker init files automatically
+./scripts.sh generate
+
+# 3. Deploy with updated schema
+./scripts.sh deploy staging
+```
+
+**Key Benefits:**
+- ✅ No manual duplication of schema files
+- ✅ Prevents migration conflicts during deployment
+- ✅ Fast container startup with pre-initialized schema
+- ✅ Version controlled schema changes
+
+### **Schema Directory Structure**
+```
+internal/sql/
+├── schema/          # Goose migrations (PRIMARY - edit these)
+├── docker-init/     # Auto-generated (DO NOT edit manually)
+└── queries/         # SQLC query files
+```
 
 # Deploy to production (requires release)
 make deploy/production
@@ -359,3 +417,61 @@ This implementation demonstrates:
 - **Database management** with version-controlled migrations
 
 The LeadHub service is now production-ready with industry-standard DevOps practices, demonstrating mastery of containerization, CI/CD, and deployment automation.
+
+## 📋 **Script Organization**
+
+### **Script Management Center**
+
+All project scripts are organized and accessible through the central script manager:
+
+```bash
+./scripts.sh help  # View all available commands
+```
+
+### **Script Categories**
+
+**Deployment Scripts** (`scripts/deployment/`)
+- `deploy.sh [staging|production]` - Deploy application with health checks
+- `validate-deployment.sh` - Comprehensive deployment validation
+- `teardown.sh [environment]` - Clean environment teardown
+
+**Database Scripts** (`scripts/database/`)
+- `generate-docker-init.sh` - Generate Docker init files from Goose migrations
+- `reset-db.sh` - Reset database to clean state
+- `migrate.sh` - Run database migrations
+- `add-user-permissions.sh` - Add user permissions
+
+**Development Scripts** (`scripts/development/`)
+- `dev.sh [--reset]` - Start development environment
+
+**Testing Scripts** (`scripts/testing/`)
+- `test.sh` - Run full test suite
+- `test-db-connection.sh [env]` - Test database connectivity
+- `test-complete-setup.sh` - Test complete setup
+
+**Maintenance Scripts** (`scripts/maintenance/`)
+- `quick-fix.sh` - Quick system fixes and maintenance
+
+### **Environment Management**
+
+Each environment has specific configurations and behaviors:
+
+**Development Environment**
+- Local development with hot reload
+- Uses development database
+- Debug logging enabled
+- CORS permissive for local development
+
+**Staging Environment**  
+- Production-like environment for testing
+- Uses staging database
+- Production logging level
+- CORS configured for staging domain
+- Automated deployment from development branch
+
+**Production Environment**
+- Fully secured production deployment
+- Uses production database
+- Optimized logging and monitoring
+- Strict CORS policy
+- Manual deployment from release tags

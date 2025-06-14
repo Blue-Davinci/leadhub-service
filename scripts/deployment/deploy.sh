@@ -9,11 +9,13 @@ set -e
 ENVIRONMENT=${1:-staging}
 IMAGE_TAG=${2:-latest}
 
-# Set compose file based on environment
+# Set compose file and env file based on environment
 if [[ "$ENVIRONMENT" == "staging" ]]; then
     COMPOSE_FILE="docker-compose.staging.yml"
+    ENV_FILE=".env.staging"
 else
     COMPOSE_FILE="docker-compose.prod.yml"
+    ENV_FILE=".env.production"
 fi
 
 # Colors for output
@@ -46,6 +48,15 @@ if [[ "$ENVIRONMENT" != "staging" && "$ENVIRONMENT" != "production" ]]; then
 fi
 
 log_info "Starting deployment to $ENVIRONMENT environment..."
+
+# Generate Docker initialization files from schema
+log_info "Generating Docker initialization files from schema..."
+if [[ -f "./scripts/database/generate-docker-init.sh" ]]; then
+    ./scripts/database/generate-docker-init.sh
+    log_success "Docker initialization files generated successfully"
+else
+    log_warning "generate-docker-init.sh not found, skipping schema generation"
+fi
 
 # Load environment variables based on environment
 if [[ -f ".env.${ENVIRONMENT}" ]]; then
@@ -87,40 +98,8 @@ docker-compose -f $COMPOSE_FILE $ENV_FILE_PARAM up -d
 log_info "Waiting for services to be ready..."
 sleep 30
 
-# Run database migrations
-log_info "Running database migrations..."
-
-# Set default password for staging if not provided
-if [[ "$ENVIRONMENT" == "staging" ]]; then
-    POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-leadhub_staging_password}
-    NETWORK_NAME="leadhub-backend-staging"
-else
-    POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)}
-    NETWORK_NAME="leadhub-backend"
-fi
-
-# Check if we have a migration tool or use psql directly
-if command -v migrate &> /dev/null; then
-    log_info "Using migrate tool for database migrations..."
-    docker run --rm --network $NETWORK_NAME \
-        -v $(pwd)/internal/sql/schema:/migrations \
-        migrate/migrate:latest \
-        -path=/migrations \
-        -database="postgres://leadhub:${POSTGRES_PASSWORD}@postgres:5432/leadhub?sslmode=disable" up
-else
-    log_info "Using psql for database schema setup..."
-    # Apply schema files directly using psql
-    for schema_file in $(ls internal/sql/schema/*.sql | sort); do
-        log_info "Applying schema: $(basename $schema_file)"
-        docker run --rm --network $NETWORK_NAME \
-            -v $(pwd)/internal/sql/schema:/sql \
-            postgres:16-alpine \
-            psql "postgres://leadhub:${POSTGRES_PASSWORD}@postgres:5432/leadhub?sslmode=disable" \
-            -f "/sql/$(basename $schema_file)"
-    done
-fi
-
-log_success "Database migrations completed"
+# Note: Database schema is automatically initialized by Docker using files in /internal/sql/docker-init/
+# No need to run migrations here as the schema is already set up during container initialization
 
 # Health check
 log_info "Running health checks..."
