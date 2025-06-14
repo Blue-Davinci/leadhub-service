@@ -130,10 +130,10 @@ health/check:
 .PHONY: migrate/up
 migrate/up:
 	@echo 'Running database migrations...'
-	./scripts/migrate.sh development up
+	./scripts/database/migrate.sh development up
 
 ## migrate/status: check migration status
 .PHONY: migrate/status
 migrate/status:
 	@echo 'Checking migration status...'
-	./scripts/migrate.sh development status
+	./scripts/database/migrate.sh development status

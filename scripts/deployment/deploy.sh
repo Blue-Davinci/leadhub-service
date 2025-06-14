@@ -140,9 +140,11 @@ log_success "Deployment to $ENVIRONMENT completed successfully!"
 echo ""
 echo "Access your application at:"
 if [[ "$ENVIRONMENT" == "production" ]]; then
-    echo "  - Production: https://leadhub.example.com"
+    echo "  - Production: https://leadhub.tech" # Production URL
+    echo "  - API Direct: https://api.leadhub.tech" # Direct API access
 else
-    echo "  - Staging: https://staging.leadhub.example.com"
+    echo "  - Staging: https://staging.leadhub.tech" # Staging URL
+    echo "  - API Direct: https://api-staging.leadhub.tech" # Direct API access
 fi
 echo "  - Health Check: /v1/health"
 echo "  - Metrics: /v1/debug/vars"

@@ -40,28 +40,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    environment:
-      # Database Configuration
-      LEADHUB_DB_DSN: "postgres://leadhub:leadhub_dev_password@postgres:5432/leadhub?sslmode=disable"
-      
-      # Server Configuration
-      PORT: 4000
-      ENV: development
-      
-      # Rate Limiting
-      RATE_LIMIT_RPS: 10
-      RATE_LIMIT_BURST: 20
-      
-      # SMTP Configuration (using Mailtrap for development)
-      LEADHUB_SMTP_HOST: sandbox.smtp.mailtrap.io
-      LEADHUB_SMTP_USERNAME: your_smtp_username
-      LEADHUB_SMTP_PASSWORD: your_smtp_password
-      LEADHUB_SMTP_SENDER: "LEADHUB <no-reply@leadhub.tech>"
-      
-      # Database Connection Pool
-      DB_MAX_OPEN_CONNS: 25
-      DB_MAX_IDLE_CONNS: 25
-      DB_MAX_IDLE_TIME: 15m
+    env_file:
+      - cmd/api/.env.docker
     ports:
       - "4000:4000"
     volumes:

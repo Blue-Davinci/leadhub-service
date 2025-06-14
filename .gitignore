@@ -2,6 +2,7 @@
 linux_amd64_api
 INTERNAL_IMPLEMENTATION_NOTES.md
 IMPLEMENTATION_SUMMARY.md
+ENVIRONMENT_ANALYSIS.md
 
 # Test coverage files
 coverage.out
@@ -9,6 +10,8 @@ coverage.html
 
 # Security scan results
 gosec-results.sarif
+
+# Environment files
 .env.*
 
 # Auto-generated Docker initialization files

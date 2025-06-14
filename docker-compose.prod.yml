@@ -37,6 +37,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: leadhub-api-1
+    env_file:
+      - .env.production
     environment: &api-environment
       # Database Configuration
       LEADHUB_DB_DSN: "postgres://leadhub:${POSTGRES_PASSWORD}@postgres:5432/leadhub?sslmode=require"
@@ -83,6 +85,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: leadhub-api-2
+    env_file:
+      - .env.production
     environment: *api-environment
     expose:
       - "4000"
@@ -114,6 +118,7 @@ services:
       POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./internal/sql/docker-init:/docker-entrypoint-initdb.d
       - ./postgresql/postgresql.conf:/etc/postgresql/postgresql.conf:ro
       - postgres_logs:/var/log/postgresql
     networks:
@@ -140,7 +145,7 @@ services:
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--web.enable-lifecycle'
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"  # Only bind to localhost for security
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
@@ -156,7 +161,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
       - GF_USERS_ALLOW_SIGN_UP=false
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"  # Only bind to localhost for security
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
