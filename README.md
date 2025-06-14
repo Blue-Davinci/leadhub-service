@@ -46,31 +46,70 @@ These instructions will get you a copy of the project up and running on your loc
 ### Prerequisites
 
 ```bash
-- Go 1.20+
+- Go 1.23+
 - Docker & Docker Compose
-- PostgreSQL 14+
-- Redis
+- PostgreSQL 16+
 - GNU Make (optional, for scripted workflows)
 ```
 
-### Installing
+### Quick Start
 
-- Clone the repo:
+The LeadHub Service uses an automated script management system for easy development and deployment:
 
+```bash
+# Clone the repository
+git clone https://github.com/Blue-Davinci/leadhub-service.git
+cd leadhub-service
+
+# View all available commands
+./scripts.sh help
+
+# Start development environment
+./scripts.sh dev
+
+# Or run individual services
+./scripts/development/dev.sh
+```
+
+### Installation
+
+1. **Clone and Setup**:
 ```bash
 git clone https://github.com/Blue-Davinci/leadhub-service.git
 cd leadhub-service
 ```
-- Set up environment variables:
 
+2. **Environment Configuration**:
 ```bash
+# Copy environment templates
 cp .env.example .env
+cp .env.staging.example .env.staging
+cp .env.production.example .env.production
 ```
 
-- Apply database migrations:
+3. **Database Schema Management**:
+```bash
+# Generate Docker initialization files from Goose migrations
+./scripts.sh generate
+
+# Or manually run the generator
+./scripts/database/generate-docker-init.sh
+```
+
+### Development Environment
 
 ```bash
-go run cmd/migrate.go up
+# Start development environment with hot reload
+./scripts.sh dev
+
+# Reset development environment
+./scripts/development/dev.sh --reset
+
+# Run tests
+./scripts.sh test
+
+# Validate deployment
+./scripts.sh validate
 ```
 
 ## 🔧 Running the tests <a name = "tests"></a>
@@ -107,42 +146,130 @@ Trade leads: GET /v1/trade_leads/ (Bearer token required)
 
 ## 🚀 DevOps & Deployment <a name = "deployment"></a>
 
-### Quick Start
-```bash
-# Development environment
-make docker/dev
+### Quick Deployment Commands
 
-# Production deployment  
-make deploy/production
+```bash
+# Generate database schema files
+./scripts.sh generate
+
+# Deploy to staging
+./scripts.sh deploy staging
+
+# Deploy to production  
+./scripts.sh deploy production
+
+# Validate deployment
+./scripts.sh validate
+
+# Teardown environment
+./scripts.sh teardown staging
 ```
+
+### Script Management System
+
+The LeadHub Service includes a comprehensive script management system organized by category:
+
+```bash
+# View all available scripts
+./scripts.sh help
+
+# Deployment scripts
+./scripts.sh deploy [staging|production]    # Deploy application
+./scripts.sh validate                       # Validate deployment  
+./scripts.sh teardown [environment]         # Clean teardown
+
+# Database scripts
+./scripts.sh generate                       # Generate Docker init files
+./scripts/database/reset-db.sh             # Reset database
+./scripts/database/migrate.sh              # Run migrations
+
+# Development scripts
+./scripts.sh dev                           # Start dev environment
+./scripts.sh test                          # Run test suite
+
+# Maintenance scripts
+./scripts/maintenance/quick-fix.sh          # Quick system fixes
+```
+
+### Database Schema Management
+
+LeadHub uses an automated **single source of truth** approach for database schema management:
+
+- **Primary Source**: `/internal/sql/schema/` (Goose migration files)
+- **Auto-Generated**: `/internal/sql/docker-init/` (Clean Docker initialization files)
+- **Automated Workflow**: Docker init files are automatically generated during deployment
+
+```bash
+# Edit schema files in /internal/sql/schema/
+vim internal/sql/schema/002_create_users.sql
+
+# Deploy automatically generates and uses latest schema
+./scripts.sh deploy staging
+
+# Manual generation (optional, for testing)
+./scripts.sh generate
+```
+
+### Environment Management
+
+- **Development**: Local development with hot reload
+- **Staging**: Automated deployment from development branch  
+- **Production**: Release-based deployment with health monitoring
 
 ### CI/CD Pipeline
 - **Automated Testing**: Unit, integration, and security tests
 - **Container Security**: Vulnerability scanning with Trivy
-- **Multi-environment**: Staging (development branch) and Production (releases)
+- **Multi-environment**: Staging and production environments
 - **Health Monitoring**: Automated health checks and rollback
+- **Schema Automation**: Automatic Docker init file generation
 
 ### Documentation
 - **[Complete Deployment Guide](./docs/DEPLOYMENT.md)** - Comprehensive deployment procedures
+- **[Database Schema Management](./docs/DATABASE_SCHEMA_MANAGEMENT.md)** - Schema workflow and automation
 - **[DevOps Guide](./docs/DEVOPS.md)** - Infrastructure and operational procedures  
-- **[Implementation Summary](./docs/IMPLEMENTATION_SUMMARY.md)** - Technical implementation details
+- **[Script Organization](./docs/SCRIPT_ORGANIZATION.md)** - Script management documentation
 
 ## 🧪 Testing <a name = "testing"></a>
 
-```bash
-# Run all tests
-make test/all
+### Automated Testing
 
-# Test coverage report
-./test.sh
+```bash
+# Run all tests with coverage
+./scripts.sh test
+
+# Individual test categories
+./scripts/testing/test.sh                    # Full test suite
+./scripts/testing/test-db-connection.sh      # Database connectivity
+./scripts/testing/test-complete-setup.sh    # End-to-end setup testing
+
+# Manual testing commands
+go test ./...                               # Basic unit tests
+go test -race ./...                         # Race condition detection
+go test -cover ./...                        # Coverage report
 ```
+
+### Testing Features
 
 **Test Coverage:**
 - Multi-tenant security validation
-- Authentication and authorization
+- Authentication and authorization  
 - Rate limiting and panic recovery
 - Business logic validation
-- Financial precision testing
+- Database schema validation
+- Deployment validation
+- Container health checks
+
+**Database Testing:**
+- Schema integrity validation
+- Migration testing (up/down)
+- Multi-tenant data isolation
+- Connection pooling and performance
+
+**Integration Testing:**
+- API endpoint testing
+- Container orchestration
+- Health check validation
+- Load balancing verification
 
 ## 📚 API Documentation <a name = "api_docs"></a>
 
@@ -188,6 +315,9 @@ Authorization: Bearer <token>
 - **[Docker](https://docker.com)** – Containerization platform
 - **[GitHub Actions](https://github.com/features/actions)** – CI/CD automation
 - **[Goose](https://github.com/pressly/goose)** – Database migration tool
+- **[Adminer](https://www.adminer.org/)** – Database administration interface
+- **[Prometheus](https://prometheus.io/)** – Monitoring and alerting toolkit
+- **[Grafana](https://grafana.com/)** – Analytics and monitoring platform
 
 ## ✍️ Authors <a name = "authors"></a>
 
@@ -196,17 +326,31 @@ Authorization: Bearer <token>
 ## 📖 Documentation <a name = "documentation"></a>
 
 ### Core Documentation
-- **[Deployment Guide](./docs/DEPLOYMENT.md)** - Complete deployment procedures
-- **[DevOps Guide](./docs/DEVOPS.md)** - Infrastructure management
-- **[Implementation Summary](./docs/IMPLEMENTATION_SUMMARY.md)** - Technical overview
+- **[Deployment Guide](./docs/DEPLOYMENT.md)** - Complete deployment procedures and architecture
+- **[Database Schema Management](./docs/DATABASE_SCHEMA_MANAGEMENT.md)** - Automated schema workflow
+- **[DevOps Guide](./docs/DEVOPS.md)** - Infrastructure management and best practices
+- **[Implementation Summary](./IMPLEMENTATION_SUMMARY.md)** - Technical overview and decisions
 
-### Development
-- **[Test Guide](./test.sh)** - Automated testing procedures
-- **[Migration Scripts](./scripts/)** - Database and deployment automation
+### Development & Operations
+- **[Script Organization](./docs/SCRIPT_ORGANIZATION.md)** - Script management and organization
+- **[Adminer Guide](./docs/ADMINER_GUIDE.md)** - Database administration interface
+- **[Security Guide](./docs/SECURITY.md)** - Security implementation and best practices
+
+### Scripts & Automation
+- **[Script Manager](./scripts.sh)** - Central script management system
+- **[Database Scripts](./scripts/database/)** - Schema and migration automation
+- **[Deployment Scripts](./scripts/deployment/)** - Deployment and validation automation
+- **[Testing Scripts](./scripts/testing/)** - Automated testing procedures
+
+### Configuration
 - **[Environment Configs](./configs/)** - Environment-specific configurations
+- **[Docker Compose Files](./docker-compose*.yml)** - Container orchestration
+- **[NGINX Configurations](./nginx/)** - Reverse proxy and load balancing
 
 ### Security & Compliance
-- Multi-tenant data isolation at application level
-- Bearer token based authentication with API key support
-- Rate limiting and input validation
-- Container security with vulnerability scanning
+- **Multi-tenant data isolation** at application and database level
+- **Bearer token authentication** with API key support
+- **Rate limiting and input validation** with comprehensive middleware
+- **Container security** with vulnerability scanning and secure configurations
+- **Automated schema management** preventing migration conflicts
+- **Environment separation** with staging and production isolation

@@ -25,7 +25,7 @@ services:
       - "5432:5432"
     volumes:
       - leadhub_postgres_data:/var/lib/postgresql/data
-      - ./internal/sql/schema:/docker-entrypoint-initdb.d
+      - ./internal/sql/docker-init:/docker-entrypoint-initdb.d
     networks:
       - leadhub-network
     healthcheck:

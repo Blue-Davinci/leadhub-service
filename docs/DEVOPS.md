@@ -7,13 +7,13 @@ This guide covers containerization, CI/CD pipeline, and deployment procedures fo
 ### Local Development
 ```bash
 # Start local development environment
-docker-compose up -d
+./scripts.sh dev
 
-# Run database migrations
-./scripts/migrate.sh development up
+# Or with database reset
+./scripts.sh dev --reset
 
 # Run tests
-./test.sh
+./scripts.sh test
 
 # Access the application
 curl http://localhost:4000/v1/health
@@ -21,11 +21,17 @@ curl http://localhost:4000/v1/health
 
 ### Production Deployment
 ```bash
-# Deploy to staging
-./scripts/deploy.sh staging
+# Generate Docker initialization files
+./scripts.sh generate
 
-# Deploy to production (requires release)
-./scripts/deploy.sh production latest
+# Deploy to staging
+./scripts.sh deploy staging
+
+# Deploy to production
+./scripts.sh deploy production
+
+# Validate deployment
+./scripts.sh validate
 ```
 
 ## 🏗️ Architecture Overview
@@ -102,32 +108,49 @@ The production Dockerfile uses multi-stage builds for optimal image size:
 - **Pull requests**: Tests and build only
 - **Releases**: Production deployment
 
-## 📊 Database Migrations
+## 📊 Database Schema Management
 
-### Using Goose
-The project uses Goose for database migrations:
+### Single Source of Truth Workflow
+The project uses an automated schema management system:
 
 ```bash
-# Apply all pending migrations
-./scripts/migrate.sh production up
+# Primary source: /internal/sql/schema/ (Goose migrations)
+# Auto-generated: /internal/sql/docker-init/ (Docker init files)
 
-# Rollback one migration
-./scripts/migrate.sh production down
+# Generate Docker init files from schema
+./scripts.sh generate
 
-# Check migration status
-./scripts/migrate.sh production status
-
-# Create new migration
-./scripts/migrate.sh development create add_new_table
+# Deploy with updated schema
+./scripts.sh deploy staging
 ```
 
-### Migration Files
-Located in `internal/sql/schema/`:
+### Local Development with Goose
+```bash
+# Apply all pending migrations
+./scripts/database/migrate.sh production up
+
+# Rollback one migration  
+./scripts/database/migrate.sh production down
+
+# Check migration status
+./scripts/database/migrate.sh production status
+
+# Create new migration
+./scripts/database/migrate.sh development create add_new_table
+```
+
+### Schema Files
+**Primary Source** - `/internal/sql/schema/`:
 - `001_create_table_tenants.sql`
 - `002_create_users.sql`
 - `003_create_user_apikey.sql`
 - `004_create_permissions_table.sql`
 - `005_create_table_trade_leads.sql`
+
+**Auto-Generated** - `/internal/sql/docker-init/`:
+- Clean SQL files for PostgreSQL container initialization
+- Generated automatically from Goose migrations
+- No down migrations or Goose directives
 
 ## 🔧 Environment Configuration
 
@@ -151,29 +174,58 @@ Located in `internal/sql/schema/`:
 
 ## 📝 Deployment Procedures
 
+### Script-Based Deployment
+All deployments use the centralized script management system:
+
+```bash
+# View all available commands
+./scripts.sh help
+
+# Generate Docker initialization files
+./scripts.sh generate
+
+# Deploy to staging
+./scripts.sh deploy staging
+
+# Deploy to production  
+./scripts.sh deploy production
+
+# Validate deployment
+./scripts.sh validate
+
+# Teardown environment
+./scripts.sh teardown staging
+```
+
 ### Staging Deployment
 Triggered automatically on push to `develop` branch:
 1. Tests pass
 2. Security scans complete
 3. Docker image built and scanned
-4. Deployed to staging environment
-5. Health checks verify deployment
+4. Schema files generated automatically
+5. Deployed to staging environment
+6. Health checks verify deployment
 
 ### Production Deployment
 Triggered on GitHub releases:
 1. All staging validations pass
-2. Production database migrations
-3. Blue-green deployment strategy
-4. Health check validation
-5. Rollback capability if issues
+2. Automated schema generation
+3. Production database initialization
+4. Blue-green deployment strategy
+5. Health check validation
+6. Rollback capability if issues
 
 ### Manual Deployment
 ```bash
-# Deploy specific version to staging
-./scripts/deploy.sh staging v1.2.3
+# Deploy to staging with script manager
+./scripts.sh deploy staging
 
-# Emergency production deployment
-./scripts/deploy.sh production latest
+# Deploy to production with script manager
+./scripts.sh deploy production
+
+# Or use direct scripts
+./scripts/deployment/deploy.sh staging
+./scripts/deployment/deploy.sh production
 ```
 
 ## 🔍 Monitoring & Observability

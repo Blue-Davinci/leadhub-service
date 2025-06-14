@@ -1,24 +1,24 @@
 # =============================================================================
-# LeadHub Service - Production Docker Compose
+# LeadHub Service - Staging Docker Compose Configuration
+# =============================================================================
 
 services:
   # =============================================================================
-  # NGINX Reverse Proxy (THE PRODUCTION GATEWAY)
+  # NGINX Reverse Proxy (Staging Gateway)
   # =============================================================================
   nginx:
     image: nginx:1.26-alpine
-    container_name: leadhub-nginx-prod
+    container_name: leadhub-nginx-staging
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/nginx-staging.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
       - nginx_logs:/var/log/nginx
     depends_on:
       - api-1
-      - api-2
     networks:
       - leadhub-frontend
       - leadhub-backend
@@ -30,38 +30,40 @@ services:
       retries: 3
 
   # =============================================================================
-  # LeadHub API Instances (High Availability Setup)
+  # LeadHub API Instance (Single instance for staging)
   # =============================================================================
   api-1:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: leadhub-api-1
-    environment: &api-environment
+    container_name: leadhub-api-staging
+    env_file:
+      - .env.staging
+    environment:
       # Database Configuration
-      LEADHUB_DB_DSN: "postgres://leadhub:${POSTGRES_PASSWORD}@postgres:5432/leadhub?sslmode=require"
+      LEADHUB_DB_DSN: "postgres://leadhub:${POSTGRES_PASSWORD:-leadhub_staging_password}@postgres:5432/leadhub?sslmode=disable"
       
       # Application Configuration
       PORT: 4000
-      ENV: production
+      ENV: staging
       
       # SMTP Configuration
-      LEADHUB_SMTP_HOST: ${SMTP_HOST}
-      LEADHUB_SMTP_USERNAME: ${SMTP_USERNAME}
-      LEADHUB_SMTP_PASSWORD: ${SMTP_PASSWORD}
-      LEADHUB_SMTP_SENDER: "LeadHub <no-reply@leadhub.tech>"
+      LEADHUB_SMTP_HOST: ${SMTP_HOST:-sandbox.smtp.mailtrap.io}
+      LEADHUB_SMTP_USERNAME: ${SMTP_USERNAME:-your_smtp_username}
+      LEADHUB_SMTP_PASSWORD: ${SMTP_PASSWORD:-your_smtp_password}
+      LEADHUB_SMTP_SENDER: "LeadHub Staging <no-reply@staging.leadhub.tech>"
       
-      # Rate Limiting (Production settings)
-      RATE_LIMIT_RPS: 5
-      RATE_LIMIT_BURST: 10
+      # Rate Limiting (Relaxed for staging)
+      RATE_LIMIT_RPS: 20
+      RATE_LIMIT_BURST: 40
       
       # Database Pool Settings
-      DB_MAX_OPEN_CONNS: 50
-      DB_MAX_IDLE_CONNS: 25
+      DB_MAX_OPEN_CONNS: 25
+      DB_MAX_IDLE_CONNS: 10
       DB_MAX_IDLE_TIME: 15m
       
       # Security Settings
-      CORS_TRUSTED_ORIGINS: ${CORS_ORIGINS:-https://leadhub.tech,https://app.leadhub.tech}
+      CORS_TRUSTED_ORIGINS: ${CORS_ORIGINS:-https://staging.leadhub.tech,http://localhost:3000,http://localhost:8080}
     expose:
       - "4000"
     depends_on:
@@ -70,51 +72,33 @@ services:
     networks:
       - leadhub-backend
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "/leadhub-api", "healthcheck"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
-  # Second API instance for high availability
-  api-2:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: leadhub-api-2
-    environment: *api-environment
-    expose:
-      - "4000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - leadhub-backend
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "/leadhub-api", "healthcheck"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    # Disable health check for now since scratch container lacks shell tools
+    # The NGINX health check will verify API accessibility
+    # healthcheck:
+    #   test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:4000/v1/health || exit 1"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 40s
 
   # =============================================================================
-  # PostgreSQL Database (Production Configuration)
+  # PostgreSQL Database (Staging Configuration)
   # =============================================================================
   postgres:
     image: postgres:16-alpine
-    container_name: leadhub-postgres-prod
+    container_name: leadhub-postgres-staging
+    env_file:
+      - .env.staging
     environment:
       POSTGRES_DB: leadhub
       POSTGRES_USER: leadhub
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-leadhub_staging_password}
       PGDATA: /var/lib/postgresql/data/pgdata
-      # Production security settings
-      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+    ports:
+      - "5432:5432"  # Expose for staging debugging
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./postgresql/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./internal/sql/docker-init:/docker-entrypoint-initdb.d
       - postgres_logs:/var/log/postgresql
     networks:
       - leadhub-backend
@@ -125,14 +109,15 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
-    # Security: Don't expose database port externally in production
+
+
 
   # =============================================================================
-  # MOnitoring & Observability
+  # Monitoring & Observability (Simplified for staging)
   # =============================================================================
   prometheus:
     image: prom/prometheus:latest
-    container_name: leadhub-prometheus
+    container_name: leadhub-prometheus-staging
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -150,15 +135,29 @@ services:
 
   grafana:
     image: grafana/grafana:latest
-    container_name: leadhub-grafana
+    container_name: leadhub-grafana-staging
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin_staging}
     ports:
       - "3000:3000"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
       - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    networks:
+      - leadhub-backend
+    restart: unless-stopped
+
+  # =============================================================================
+  # Adminer for database management (Staging only)
+  # =============================================================================
+  adminer:
+    image: adminer:4-standalone
+    container_name: leadhub-adminer-staging
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
     networks:
       - leadhub-backend
     restart: unless-stopped
@@ -170,24 +169,24 @@ networks:
   # Frontend network: NGINX and external access
   leadhub-frontend:
     driver: bridge
-    name: leadhub-frontend
+    name: leadhub-frontend-staging
   
   # Backend network: Internal services only
   leadhub-backend:
     driver: bridge
-    name: leadhub-backend
+    name: leadhub-backend-staging
 
 # =============================================================================
 # Persistent Volumes
 # =============================================================================
 volumes:
   postgres_data:
-    name: leadhub-postgres-prod
+    name: leadhub-postgres-staging
   prometheus_data:
-    name: leadhub-prometheus
+    name: leadhub-prometheus-staging
   grafana_data:
-    name: leadhub-grafana
+    name: leadhub-grafana-staging
   nginx_logs:
-    name: leadhub-nginx-logs
+    name: leadhub-nginx-logs-staging
   postgres_logs:
-    name: leadhub-postgres-logs
+    name: leadhub-postgres-logs-staging
