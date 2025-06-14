@@ -23,7 +23,7 @@ echo "Stopping containerized API and NGINX (if running)..."
 docker stop leadhub-api leadhub-nginx 2>/dev/null || true
 
 # Set environment variables for local development
-echo "🔧 Setting environment variables..."
+echo "Setting environment variables..."
 
 # Load .env file if it exists
 if [ -f "cmd/api/.env" ]; then

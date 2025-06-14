@@ -10,3 +10,7 @@ coverage.html
 # Security scan results
 gosec-results.sarif
 .env.*
+
+# Auto-generated Docker initialization files
+# These are generated from /internal/sql/schema/ files
+internal/sql/docker-init/
